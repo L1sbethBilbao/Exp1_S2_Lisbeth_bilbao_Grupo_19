@@ -1,0 +1,504 @@
+{
+  "info": {
+    "_postman_id": "minimarket-semana2-2026",
+    "name": "MiniMarket Plus - Semana 2 (JWT y Roles)",
+    "description": "Coleccion secuencial verificada para la actividad de autenticacion JWT y autorizacion por roles.\n\n**Ejecutar en orden** con Collection Runner (21 requests).\n\nUsuarios demo:\n- cliente1 / cliente123\n- empleado1 / empleado123\n- gerente1 / gerente123\n\nRequisito: aplicacion en http://localhost:8080",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "tokenCliente", "value": "" },
+    { "key": "tokenEmpleado", "value": "" },
+    { "key": "tokenGerente", "value": "" },
+    { "key": "categoriaId", "value": "1" },
+    { "key": "productoId", "value": "1" },
+    { "key": "productoDeleteId", "value": "1" },
+    { "key": "clienteId", "value": "1" },
+    { "key": "ventaId", "value": "1" }
+  ],
+  "item": [
+    {
+      "name": "01 - Public - Hola (200)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/public/hola"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', function () { pm.response.to.have.status(200); });"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 - Sin token - Listar productos (401)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/productos"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": ["pm.test('Status 401', function () { pm.response.to.have.status(401); });"],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 - Registro nuevo cliente (201)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"nuevo_cliente_postman\",\n  \"password\": \"test1234\"\n}"
+        },
+        "url": "{{baseUrl}}/api/auth/register"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 201 o 409 si ya existe', function () {",
+              "    pm.expect(pm.response.code).to.be.oneOf([201, 409]);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 - Login CLIENTE (200)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"cliente1\",\n  \"password\": \"cliente123\"\n}"
+        },
+        "url": "{{baseUrl}}/api/auth/login"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+              "var json = pm.response.json();",
+              "pm.collectionVariables.set('tokenCliente', json.token);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 - CLIENTE - Listar productos (200)",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{tokenCliente}}" }],
+        "url": "{{baseUrl}}/api/productos"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": ["pm.test('Status 200', function () { pm.response.to.have.status(200); });"],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 - CLIENTE - Crear producto (403)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tokenCliente}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Prohibido\",\n  \"precio\": 100,\n  \"stock\": 1,\n  \"categoria\": { \"id\": 1 }\n}"
+        },
+        "url": "{{baseUrl}}/api/productos"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": ["pm.test('Status 403', function () { pm.response.to.have.status(403); });"],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "07 - CLIENTE - Inventario (403)",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{tokenCliente}}" }],
+        "url": "{{baseUrl}}/api/inventario"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": ["pm.test('Status 403', function () { pm.response.to.have.status(403); });"],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "08 - Login EMPLEADO (200)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"empleado1\",\n  \"password\": \"empleado123\"\n}"
+        },
+        "url": "{{baseUrl}}/api/auth/login"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+              "pm.collectionVariables.set('tokenEmpleado', pm.response.json().token);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "09 - EMPLEADO - Crear categoria (200)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tokenEmpleado}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"BebidasPostman\"\n}"
+        },
+        "url": "{{baseUrl}}/api/categorias"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+              "pm.collectionVariables.set('categoriaId', pm.response.json().id);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "10 - EMPLEADO - Crear producto (200)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tokenEmpleado}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Agua 500ml\",\n  \"precio\": 500,\n  \"stock\": 50,\n  \"categoria\": { \"id\": {{categoriaId}} }\n}"
+        },
+        "url": "{{baseUrl}}/api/productos"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+              "pm.collectionVariables.set('productoId', pm.response.json().id);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "11 - EMPLEADO - Registrar inventario (200)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tokenEmpleado}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"producto\": { \"id\": {{productoId}} },\n  \"cantidad\": 10,\n  \"tipoMovimiento\": \"Entrada\",\n  \"fechaMovimiento\": \"2026-06-01T12:00:00.000Z\"\n}"
+        },
+        "url": "{{baseUrl}}/api/inventario"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": ["pm.test('Status 200', function () { pm.response.to.have.status(200); });"],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "12 - EMPLEADO - Listar inventario (200)",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{tokenEmpleado}}" }],
+        "url": "{{baseUrl}}/api/inventario"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": ["pm.test('Status 200', function () { pm.response.to.have.status(200); });"],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "13 - EMPLEADO - Eliminar producto (403)",
+      "request": {
+        "method": "DELETE",
+        "header": [{ "key": "Authorization", "value": "Bearer {{tokenEmpleado}}" }],
+        "url": "{{baseUrl}}/api/productos/{{productoId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": ["pm.test('Status 403', function () { pm.response.to.have.status(403); });"],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "14 - Login GERENTE (200)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"gerente1\",\n  \"password\": \"gerente123\"\n}"
+        },
+        "url": "{{baseUrl}}/api/auth/login"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+              "pm.collectionVariables.set('tokenGerente', pm.response.json().token);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "15 - GERENTE - Listar usuarios (200)",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{tokenGerente}}" }],
+        "url": "{{baseUrl}}/api/usuarios"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+              "var users = pm.response.json();",
+              "var cliente = users.find(function(u) { return u.username === 'cliente1'; });",
+              "if (cliente) { pm.collectionVariables.set('clienteId', cliente.id); }"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "16 - CLIENTE - Listar usuarios (403)",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{tokenCliente}}" }],
+        "url": "{{baseUrl}}/api/usuarios"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": ["pm.test('Status 403', function () { pm.response.to.have.status(403); });"],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "17 - CLIENTE - Agregar al carrito (200)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tokenCliente}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"usuario\": { \"id\": {{clienteId}} },\n  \"producto\": { \"id\": {{productoId}} },\n  \"cantidad\": 2\n}"
+        },
+        "url": "{{baseUrl}}/api/carrito"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": ["pm.test('Status 200', function () { pm.response.to.have.status(200); });"],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "18 - CLIENTE - Crear venta (200)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tokenCliente}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"usuario\": { \"id\": {{clienteId}} },\n  \"fecha\": \"2026-06-01T14:00:00.000Z\"\n}"
+        },
+        "url": "{{baseUrl}}/api/ventas"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+              "pm.collectionVariables.set('ventaId', pm.response.json().id);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "19 - CLIENTE - Detalle venta (200)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tokenCliente}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"venta\": { \"id\": {{ventaId}} },\n  \"producto\": { \"id\": {{productoId}} },\n  \"cantidad\": 1,\n  \"precio\": 500\n}"
+        },
+        "url": "{{baseUrl}}/api/detalle-ventas"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": ["pm.test('Status 200', function () { pm.response.to.have.status(200); });"],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "20a - EMPLEADO - Crear producto para eliminar (200)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{tokenEmpleado}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"TempDelete\",\n  \"precio\": 99,\n  \"stock\": 1,\n  \"categoria\": { \"id\": {{categoriaId}} }\n}"
+        },
+        "url": "{{baseUrl}}/api/productos"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+              "pm.collectionVariables.set('productoDeleteId', pm.response.json().id);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "20b - GERENTE - Eliminar producto (204)",
+      "request": {
+        "method": "DELETE",
+        "header": [{ "key": "Authorization", "value": "Bearer {{tokenGerente}}" }],
+        "url": "{{baseUrl}}/api/productos/{{productoDeleteId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": ["pm.test('Status 204', function () { pm.response.to.have.status(204); });"],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "21 - Login credenciales invalidas (401)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"cliente1\",\n  \"password\": \"wrongpassword\"\n}"
+        },
+        "url": "{{baseUrl}}/api/auth/login"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": ["pm.test('Status 401', function () { pm.response.to.have.status(401); });"],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    }
+  ]
+}
