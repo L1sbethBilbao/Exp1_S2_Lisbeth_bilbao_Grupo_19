@@ -1,7 +1,9 @@
 package com.minimarket.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 import java.util.Set;
 
 @Entity
@@ -25,7 +27,25 @@ public class Usuario {
     )
     private Set<Rol> roles;
 
-    // Getters y Setters
+    @Column(nullable = false)
+    private boolean mfaEnabled = false;
+
+    @JsonIgnore
+    @Column
+    private String totpSecret;
+
+    @Column
+    private LocalDateTime mfaEnrolledAt;
+
+    @Column
+    private LocalDateTime lastLoginAt;
+
+    @Column(nullable = false)
+    private boolean anonymized = false;
+
+    @Column(nullable = false)
+    private boolean retentionExcluded = false;
+
     public Long getId() {
         return id;
     }
@@ -56,5 +76,53 @@ public class Usuario {
 
     public void setRoles(Set<Rol> roles) {
         this.roles = roles;
+    }
+
+    public boolean isMfaEnabled() {
+        return mfaEnabled;
+    }
+
+    public void setMfaEnabled(boolean mfaEnabled) {
+        this.mfaEnabled = mfaEnabled;
+    }
+
+    public String getTotpSecret() {
+        return totpSecret;
+    }
+
+    public void setTotpSecret(String totpSecret) {
+        this.totpSecret = totpSecret;
+    }
+
+    public LocalDateTime getMfaEnrolledAt() {
+        return mfaEnrolledAt;
+    }
+
+    public void setMfaEnrolledAt(LocalDateTime mfaEnrolledAt) {
+        this.mfaEnrolledAt = mfaEnrolledAt;
+    }
+
+    public LocalDateTime getLastLoginAt() {
+        return lastLoginAt;
+    }
+
+    public void setLastLoginAt(LocalDateTime lastLoginAt) {
+        this.lastLoginAt = lastLoginAt;
+    }
+
+    public boolean isAnonymized() {
+        return anonymized;
+    }
+
+    public void setAnonymized(boolean anonymized) {
+        this.anonymized = anonymized;
+    }
+
+    public boolean isRetentionExcluded() {
+        return retentionExcluded;
+    }
+
+    public void setRetentionExcluded(boolean retentionExcluded) {
+        this.retentionExcluded = retentionExcluded;
     }
 }

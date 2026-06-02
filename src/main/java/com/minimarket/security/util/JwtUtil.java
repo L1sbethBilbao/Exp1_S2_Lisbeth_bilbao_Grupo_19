@@ -1,19 +1,19 @@
 package com.minimarket.security.util;
 
+import com.minimarket.security.config.JwtProperties;
+import com.minimarket.security.config.MfaProperties;
 import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.MalformedJwtException;
-import io.jsonwebtoken.UnsupportedJwtException;
 import io.jsonwebtoken.security.Keys;
-import io.jsonwebtoken.security.SignatureException;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -24,14 +24,35 @@ import java.util.stream.Collectors;
 @Component
 public class JwtUtil {
 
-    private final SecretKey signingKey;
-    private final long expirationMs;
+    private static final String CLAIM_ROLES = "roles";
+    private static final String CLAIM_TOKEN_TYPE = "type";
+    private static final String TOKEN_TYPE_MFA = "mfa";
 
-    public JwtUtil(
-            @Value("${jwt.secret}") String secret,
-            @Value("${jwt.expiration-ms}") long expirationMs) {
-        this.signingKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
-        this.expirationMs = expirationMs;
+    private final JwtProperties props;
+    private final MfaProperties mfaProperties;
+    private final SecretKey key;
+
+    @Autowired
+    public JwtUtil(JwtProperties props, MfaProperties mfaProperties) {
+        this.props = props;
+        this.mfaProperties = mfaProperties;
+        byte[] keyBytes = props.getSecret() != null
+                ? props.getSecret().getBytes(StandardCharsets.UTF_8)
+                : new byte[0];
+        if (keyBytes.length < 32) {
+            keyBytes = Arrays.copyOf(keyBytes, 32);
+        }
+        this.key = Keys.hmacShaKeyFor(keyBytes);
+    }
+
+    public String generateToken(String username) {
+        long now = System.currentTimeMillis();
+        return Jwts.builder()
+                .subject(username)
+                .issuedAt(new Date(now))
+                .expiration(new Date(now + props.getExpiration()))
+                .signWith(key)
+                .compact();
     }
 
     public String generateToken(UserDetails userDetails) {
@@ -39,69 +60,75 @@ public class JwtUtil {
         List<String> roles = userDetails.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toList());
-        claims.put("roles", roles);
-        return createToken(claims, userDetails.getUsername());
-    }
+        claims.put(CLAIM_ROLES, roles);
 
-    private String createToken(Map<String, Object> claims, String subject) {
-        Date now = new Date();
-        Date expiry = new Date(now.getTime() + expirationMs);
-
+        long now = System.currentTimeMillis();
         return Jwts.builder()
                 .claims(claims)
-                .subject(subject)
-                .issuedAt(now)
-                .expiration(expiry)
-                .signWith(signingKey)
+                .subject(userDetails.getUsername())
+                .issuedAt(new Date(now))
+                .expiration(new Date(now + props.getExpiration()))
+                .signWith(key)
                 .compact();
     }
 
-    public String extractUsername(String token) {
-        return extractClaim(token, Claims::getSubject);
+    public String generateMfaToken(String username) {
+        long now = System.currentTimeMillis();
+        Map<String, Object> claims = new HashMap<>();
+        claims.put(CLAIM_TOKEN_TYPE, TOKEN_TYPE_MFA);
+        return Jwts.builder()
+                .claims(claims)
+                .subject(username)
+                .issuedAt(new Date(now))
+                .expiration(new Date(now + mfaProperties.getTokenExpirationMs()))
+                .signWith(key)
+                .compact();
     }
 
-    @SuppressWarnings("unchecked")
-    public List<String> extractRoles(String token) {
-        return extractClaim(token, claims -> (List<String>) claims.get("roles"));
+    public boolean isMfaToken(String token) {
+        Claims claims = parseClaims(token);
+        return TOKEN_TYPE_MFA.equals(claims.get(CLAIM_TOKEN_TYPE));
+    }
+
+    public String extractUsername(String token) {
+        return getClaimFromToken(token, Claims::getSubject);
     }
 
     public Date extractExpiration(String token) {
-        return extractClaim(token, Claims::getExpiration);
+        return getClaimFromToken(token, Claims::getExpiration);
     }
 
-    public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
-        Claims claims = extractAllClaims(token);
+    public <T> T getClaimFromToken(String token, Function<Claims, T> claimsResolver) {
+        final Claims claims = parseClaims(token);
         return claimsResolver.apply(claims);
     }
 
-    private Claims extractAllClaims(String token) {
-        return Jwts.parser()
-                .verifyWith(signingKey)
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
+    private Claims parseClaims(String token) {
+        try {
+            return Jwts.parser()
+                    .verifyWith(key)
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
+        } catch (JwtException e) {
+            throw e;
+        }
     }
 
     public boolean isTokenExpired(String token) {
         return extractExpiration(token).before(new Date());
     }
 
+    public boolean validateToken(String token, String username) {
+        final String tokenUsername = extractUsername(token);
+        return username.equals(tokenUsername) && !isTokenExpired(token);
+    }
+
     public boolean validateToken(String token, UserDetails userDetails) {
-        String username = extractUsername(token);
-        return username.equals(userDetails.getUsername()) && !isTokenExpired(token);
+        return validateToken(token, userDetails.getUsername());
     }
 
-    public boolean validateToken(String token) {
-        try {
-            extractAllClaims(token);
-            return !isTokenExpired(token);
-        } catch (ExpiredJwtException | MalformedJwtException | UnsupportedJwtException
-                 | SignatureException | IllegalArgumentException e) {
-            return false;
-        }
-    }
-
-    public long getExpirationMs() {
-        return expirationMs;
+    public long getExpiration() {
+        return props.getExpiration();
     }
 }

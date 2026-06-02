@@ -1,6 +1,8 @@
 package com.minimarket.controller;
 
-import com.minimarket.entity.Carrito;
+import com.minimarket.dto.carrito.CarritoRequestDTO;
+import com.minimarket.dto.carrito.CarritoResponseDTO;
+import com.minimarket.mapper.CarritoMapper;
 import com.minimarket.security.constants.SecurityExpressions;
 import com.minimarket.service.CarritoService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,32 +19,38 @@ public class CarritoController {
     @Autowired
     private CarritoService carritoService;
 
+    @Autowired
+    private CarritoMapper carritoMapper;
+
     @GetMapping
     @PreAuthorize(SecurityExpressions.AUTENTICADO)
-    public List<Carrito> listarCarrito() {
-        return carritoService.findAll();
+    public List<CarritoResponseDTO> listarCarrito() {
+        return carritoMapper.toResponseList(carritoService.findAll());
     }
 
     @GetMapping("/{id}")
     @PreAuthorize(SecurityExpressions.AUTENTICADO)
-    public ResponseEntity<Carrito> obtenerCarritoPorId(@PathVariable Long id) {
-        Carrito carrito = carritoService.findById(id);
-        return (carrito != null) ? ResponseEntity.ok(carrito) : ResponseEntity.notFound().build();
+    public ResponseEntity<CarritoResponseDTO> obtenerCarritoPorId(@PathVariable Long id) {
+        var carrito = carritoService.findById(id);
+        return (carrito != null) ? ResponseEntity.ok(carritoMapper.toResponse(carrito))
+                : ResponseEntity.notFound().build();
     }
 
     @PostMapping
     @PreAuthorize(SecurityExpressions.AUTENTICADO)
-    public Carrito agregarProductoAlCarrito(@RequestBody Carrito carrito) {
-        return carritoService.save(carrito);
+    public CarritoResponseDTO agregarProductoAlCarrito(@RequestBody CarritoRequestDTO carritoDto) {
+        return carritoMapper.toResponse(carritoService.save(carritoMapper.toEntity(carritoDto)));
     }
 
     @PutMapping("/{id}")
     @PreAuthorize(SecurityExpressions.AUTENTICADO)
-    public ResponseEntity<Carrito> actualizarCarrito(@PathVariable Long id, @RequestBody Carrito carrito) {
-        Carrito existente = carritoService.findById(id);
+    public ResponseEntity<CarritoResponseDTO> actualizarCarrito(
+            @PathVariable Long id, @RequestBody CarritoRequestDTO carritoDto) {
+        var existente = carritoService.findById(id);
         if (existente != null) {
-            carrito.setId(id);
-            return ResponseEntity.ok(carritoService.save(carrito));
+            carritoDto.setId(id);
+            return ResponseEntity.ok(carritoMapper.toResponse(
+                    carritoService.save(carritoMapper.toEntity(carritoDto))));
         }
         return ResponseEntity.notFound().build();
     }
@@ -50,7 +58,7 @@ public class CarritoController {
     @DeleteMapping("/{id}")
     @PreAuthorize(SecurityExpressions.AUTENTICADO)
     public ResponseEntity<Void> eliminarProductoDelCarrito(@PathVariable Long id) {
-        Carrito carrito = carritoService.findById(id);
+        var carrito = carritoService.findById(id);
         if (carrito != null) {
             carritoService.deleteById(id);
             return ResponseEntity.noContent().build();

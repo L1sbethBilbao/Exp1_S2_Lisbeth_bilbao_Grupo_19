@@ -1,6 +1,8 @@
 package com.minimarket.controller;
 
-import com.minimarket.entity.DetalleVenta;
+import com.minimarket.dto.detalleventa.DetalleVentaRequestDTO;
+import com.minimarket.dto.detalleventa.DetalleVentaResponseDTO;
+import com.minimarket.mapper.DetalleVentaMapper;
 import com.minimarket.security.constants.SecurityExpressions;
 import com.minimarket.service.DetalleVentaService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,32 +19,39 @@ public class DetalleVentaController {
     @Autowired
     private DetalleVentaService detalleVentaService;
 
+    @Autowired
+    private DetalleVentaMapper detalleVentaMapper;
+
     @GetMapping
     @PreAuthorize(SecurityExpressions.AUTENTICADO)
-    public List<DetalleVenta> listarDetalleVentas() {
-        return detalleVentaService.findAll();
+    public List<DetalleVentaResponseDTO> listarDetalleVentas() {
+        return detalleVentaMapper.toResponseList(detalleVentaService.findAll());
     }
 
     @GetMapping("/{id}")
     @PreAuthorize(SecurityExpressions.AUTENTICADO)
-    public ResponseEntity<DetalleVenta> obtenerDetalleVentaPorId(@PathVariable Long id) {
-        DetalleVenta detalleVenta = detalleVentaService.findById(id);
-        return (detalleVenta != null) ? ResponseEntity.ok(detalleVenta) : ResponseEntity.notFound().build();
+    public ResponseEntity<DetalleVentaResponseDTO> obtenerDetalleVentaPorId(@PathVariable Long id) {
+        var detalleVenta = detalleVentaService.findById(id);
+        return (detalleVenta != null) ? ResponseEntity.ok(detalleVentaMapper.toResponse(detalleVenta))
+                : ResponseEntity.notFound().build();
     }
 
     @PostMapping
     @PreAuthorize(SecurityExpressions.AUTENTICADO)
-    public DetalleVenta guardarDetalleVenta(@RequestBody DetalleVenta detalleVenta) {
-        return detalleVentaService.save(detalleVenta);
+    public DetalleVentaResponseDTO guardarDetalleVenta(@RequestBody DetalleVentaRequestDTO detalleVentaDto) {
+        return detalleVentaMapper.toResponse(
+                detalleVentaService.save(detalleVentaMapper.toEntity(detalleVentaDto)));
     }
 
     @PutMapping("/{id}")
     @PreAuthorize(SecurityExpressions.EMPLEADO_O_GERENTE)
-    public ResponseEntity<DetalleVenta> actualizarDetalleVenta(@PathVariable Long id, @RequestBody DetalleVenta detalleVenta) {
-        DetalleVenta existente = detalleVentaService.findById(id);
+    public ResponseEntity<DetalleVentaResponseDTO> actualizarDetalleVenta(
+            @PathVariable Long id, @RequestBody DetalleVentaRequestDTO detalleVentaDto) {
+        var existente = detalleVentaService.findById(id);
         if (existente != null) {
-            detalleVenta.setId(id);
-            return ResponseEntity.ok(detalleVentaService.save(detalleVenta));
+            detalleVentaDto.setId(id);
+            return ResponseEntity.ok(detalleVentaMapper.toResponse(
+                    detalleVentaService.save(detalleVentaMapper.toEntity(detalleVentaDto))));
         }
         return ResponseEntity.notFound().build();
     }
@@ -50,7 +59,7 @@ public class DetalleVentaController {
     @DeleteMapping("/{id}")
     @PreAuthorize(SecurityExpressions.EMPLEADO_O_GERENTE)
     public ResponseEntity<Void> eliminarDetalleVenta(@PathVariable Long id) {
-        DetalleVenta detalleVenta = detalleVentaService.findById(id);
+        var detalleVenta = detalleVentaService.findById(id);
         if (detalleVenta != null) {
             detalleVentaService.deleteById(id);
             return ResponseEntity.noContent().build();

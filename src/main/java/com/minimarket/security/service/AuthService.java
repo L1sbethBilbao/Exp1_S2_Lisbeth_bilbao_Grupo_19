@@ -9,9 +9,6 @@ import com.minimarket.security.model.AuthResponse;
 import com.minimarket.security.model.LoginRequest;
 import com.minimarket.security.model.RegisterRequest;
 import com.minimarket.security.util.JwtUtil;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -26,7 +23,6 @@ public class AuthService {
     private final UsuarioRepository usuarioRepository;
     private final RolRepository rolRepository;
     private final PasswordEncoder passwordEncoder;
-    private final AuthenticationManager authenticationManager;
     private final CustomUserDetailsService userDetailsService;
     private final JwtUtil jwtUtil;
 
@@ -34,13 +30,11 @@ public class AuthService {
             UsuarioRepository usuarioRepository,
             RolRepository rolRepository,
             PasswordEncoder passwordEncoder,
-            AuthenticationManager authenticationManager,
             CustomUserDetailsService userDetailsService,
             JwtUtil jwtUtil) {
         this.usuarioRepository = usuarioRepository;
         this.rolRepository = rolRepository;
         this.passwordEncoder = passwordEncoder;
-        this.authenticationManager = authenticationManager;
         this.userDetailsService = userDetailsService;
         this.jwtUtil = jwtUtil;
     }
@@ -65,20 +59,6 @@ public class AuthService {
         return buildAuthResponse(userDetails);
     }
 
-    public AuthResponse login(LoginRequest request) {
-        try {
-            authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(
-                            request.getUsername(),
-                            request.getPassword()));
-        } catch (BadCredentialsException e) {
-            throw new BadCredentialsException("Credenciales inválidas");
-        }
-
-        UserDetails userDetails = userDetailsService.loadUserByUsername(request.getUsername());
-        return buildAuthResponse(userDetails);
-    }
-
     private AuthResponse buildAuthResponse(UserDetails userDetails) {
         String token = jwtUtil.generateToken(userDetails);
         var roles = userDetails.getAuthorities().stream()
@@ -87,7 +67,7 @@ public class AuthService {
 
         return new AuthResponse(
                 token,
-                jwtUtil.getExpirationMs(),
+                jwtUtil.getExpiration(),
                 userDetails.getUsername(),
                 roles);
     }

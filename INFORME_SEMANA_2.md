@@ -34,12 +34,13 @@ MiniMarket Plus requiere proteger su API REST sin mantener sesiones en el servid
 
 ### Paso 2 — Autenticación JWT
 
-1. **`SecurityConfig`**: deshabilita form login y HTTP Basic; política `STATELESS`; filtro JWT antes de `UsernamePasswordAuthenticationFilter`.
-2. **Entidad `Usuario`**: username único, password con BCrypt, relación `ManyToMany` con `Rol`.
-3. **`CustomUserDetailsService`**: implementa `UserDetailsService` cargando usuario desde H2.
-4. **`AuthController`**: `POST /api/auth/register` y `POST /api/auth/login`.
-5. **`JwtUtil`**: genera token con `subject`, `roles` en claims, firma HMAC-SHA256 y expiración configurable.
-6. **`JwtAuthenticationFilter`**: lee `Authorization: Bearer <token>`, valida y establece `SecurityContext`.
+1. **`ConfigSpringSecurity`** (alineado con repo del profesor): deshabilita form login y HTTP Basic; política `STATELESS`; filtro JWT antes de `UsernamePasswordAuthenticationFilter`; `DaoAuthenticationProvider` con BCrypt.
+2. **`JwtProperties`**: mapea `jwt.secret` y `jwt.expiration` desde `application.properties`.
+3. **Entidad `Usuario`**: username único, password con BCrypt, relación `ManyToMany` con `Rol`.
+4. **`CustomUserDetailsService`**: implementa `UserDetailsService` cargando usuario desde H2.
+5. **`AuthController`** (en `security/controller/`): `POST /api/auth/register` y `POST /api/auth/login`.
+6. **`JwtUtil`**: genera token con `subject`, `roles` en claims, firma HMAC-SHA256 y expiración configurable vía `JwtProperties`.
+7. **`JwtAuthenticationFilter`**: lee `Authorization: Bearer <token>`, valida y establece `SecurityContext` en cada request.
 
 ### Paso 3 — Autorización por roles
 
@@ -123,11 +124,12 @@ Authorization: Bearer <token_del_login>
 
 ## 6. Archivos principales modificados o creados
 
-- `security/config/SecurityConfig.java`
+- `security/config/ConfigSpringSecurity.java`
+- `security/config/JwtProperties.java`
 - `security/util/JwtUtil.java`
 - `security/filter/JwtAuthenticationFilter.java`
 - `security/service/AuthService.java`
-- `controller/AuthController.java`
+- `security/controller/AuthController.java`
 - `config/DataInitializer.java`
 - Controladores con `@PreAuthorize`
 - `pom.xml`, `application.properties`

@@ -35,13 +35,15 @@
 
 **Estado: CUMPLE**
 
-- `SecurityConfig`: sin form login ni HTTP Basic
+- `ConfigSpringSecurity`: sin form login ni HTTP Basic (misma lógica que repo del profesor `ms-productos-base`)
+- `JwtProperties`: secret y expiración del token desde `application.properties`
 - Sesión `STATELESS` (sin estado en servidor)
 - `JwtAuthenticationFilter` **antes** de `UsernamePasswordAuthenticationFilter`
+- `DaoAuthenticationProvider` + `CustomUserDetailsService` + `PasswordEncoder` (BCrypt)
 - Rutas públicas: `/api/auth/**`, `/public/**`
 - Resto de rutas: requieren autenticación con Bearer token
 
-**Archivos clave:** `security/config/SecurityConfig.java`, `security/filter/JwtAuthenticationFilter.java`
+**Archivos clave:** `security/config/ConfigSpringSecurity.java`, `security/config/JwtProperties.java`, `security/filter/JwtAuthenticationFilter.java`
 
 **Nota:** En Spring Boot 3 no se usa `WebSecurityConfigurerAdapter`; se usa `SecurityFilterChain` con `@Bean`. Es la forma actual y correcta. Si el profesor menciona “extender” la clase antigua, explícalo en el informe en una línea.
 
@@ -253,10 +255,11 @@ Ver detalle en: `minimarket/postman/GUIA_PRUEBAS_SECUENCIALES.md`
     │   ├── MiniMarket_Semana2.postman_collection.json
     │   └── GUIA_PRUEBAS_SECUENCIALES.md
     └── src/main/java/com/minimarket/
-        ├── controller/AuthController.java
         ├── config/DataInitializer.java
-        ├── config/SecurityConfig.java (en security/config/)
         ├── security/
+        │   ├── config/ConfigSpringSecurity.java
+        │   ├── config/JwtProperties.java
+        │   ├── controller/AuthController.java
         │   ├── filter/JwtAuthenticationFilter.java
         │   ├── util/JwtUtil.java
         │   ├── service/AuthService.java

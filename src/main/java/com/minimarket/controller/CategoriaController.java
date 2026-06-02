@@ -1,6 +1,8 @@
 package com.minimarket.controller;
 
-import com.minimarket.entity.Categoria;
+import com.minimarket.dto.categoria.CategoriaRequestDTO;
+import com.minimarket.dto.categoria.CategoriaResponseDTO;
+import com.minimarket.mapper.CategoriaMapper;
 import com.minimarket.security.constants.SecurityExpressions;
 import com.minimarket.service.CategoriaService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,32 +19,38 @@ public class CategoriaController {
     @Autowired
     private CategoriaService categoriaService;
 
+    @Autowired
+    private CategoriaMapper categoriaMapper;
+
     @GetMapping
     @PreAuthorize(SecurityExpressions.AUTENTICADO)
-    public List<Categoria> listarCategorias() {
-        return categoriaService.findAll();
+    public List<CategoriaResponseDTO> listarCategorias() {
+        return categoriaMapper.toResponseList(categoriaService.findAll());
     }
 
     @GetMapping("/{id}")
     @PreAuthorize(SecurityExpressions.AUTENTICADO)
-    public ResponseEntity<Categoria> obtenerCategoriaPorId(@PathVariable Long id) {
-        Categoria categoria = categoriaService.findById(id);
-        return (categoria != null) ? ResponseEntity.ok(categoria) : ResponseEntity.notFound().build();
+    public ResponseEntity<CategoriaResponseDTO> obtenerCategoriaPorId(@PathVariable Long id) {
+        var categoria = categoriaService.findById(id);
+        return (categoria != null) ? ResponseEntity.ok(categoriaMapper.toResponse(categoria))
+                : ResponseEntity.notFound().build();
     }
 
     @PostMapping
     @PreAuthorize(SecurityExpressions.EMPLEADO_O_GERENTE)
-    public Categoria guardarCategoria(@RequestBody Categoria categoria) {
-        return categoriaService.save(categoria);
+    public CategoriaResponseDTO guardarCategoria(@RequestBody CategoriaRequestDTO categoriaDto) {
+        return categoriaMapper.toResponse(categoriaService.save(categoriaMapper.toEntity(categoriaDto)));
     }
 
     @PutMapping("/{id}")
     @PreAuthorize(SecurityExpressions.EMPLEADO_O_GERENTE)
-    public ResponseEntity<Categoria> actualizarCategoria(@PathVariable Long id, @RequestBody Categoria categoria) {
-        Categoria categoriaExistente = categoriaService.findById(id);
+    public ResponseEntity<CategoriaResponseDTO> actualizarCategoria(
+            @PathVariable Long id, @RequestBody CategoriaRequestDTO categoriaDto) {
+        var categoriaExistente = categoriaService.findById(id);
         if (categoriaExistente != null) {
-            categoria.setId(id);
-            return ResponseEntity.ok(categoriaService.save(categoria));
+            categoriaDto.setId(id);
+            return ResponseEntity.ok(categoriaMapper.toResponse(
+                    categoriaService.save(categoriaMapper.toEntity(categoriaDto))));
         }
         return ResponseEntity.notFound().build();
     }
@@ -50,7 +58,7 @@ public class CategoriaController {
     @DeleteMapping("/{id}")
     @PreAuthorize(SecurityExpressions.SOLO_GERENTE)
     public ResponseEntity<Void> eliminarCategoria(@PathVariable Long id) {
-        Categoria categoria = categoriaService.findById(id);
+        var categoria = categoriaService.findById(id);
         if (categoria != null) {
             categoriaService.deleteById(id);
             return ResponseEntity.noContent().build();

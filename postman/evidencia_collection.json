@@ -1,0 +1,378 @@
+{
+  "info": {
+    "_postman_id": "minimarket-evidencia-2026",
+    "name": "MiniMarket Plus - Evidencia Entrega Semana 2",
+    "description": "Coleccion completa para capturas de evidencia visual (Postman + roadmap GAP).\n\n**Ejecutar en orden** por bloques con Collection Runner.\n\nUsuarios demo:\n- cliente1 / cliente123\n- empleado1 / empleado123\n- gerente1 / gerente123\n\nRequisito: aplicacion en http://localhost:8080\n\nGuia de capturas: ../../documentacion_final.md\n\nBLOQUE A: 21 pruebas core (pauta criterio 6)\nBLOQUE B: Roadmap GAP 005-012\nBLOQUE C: Anti brute force (ejecutar AL FINAL - bloquea usuario 15 min)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "tokenCliente", "value": "" },
+    { "key": "tokenEmpleado", "value": "" },
+    { "key": "tokenGerente", "value": "" },
+    { "key": "categoriaId", "value": "1" },
+    { "key": "productoId", "value": "1" },
+    { "key": "productoDeleteId", "value": "1" },
+    { "key": "clienteId", "value": "1" },
+    { "key": "ventaId", "value": "1" },
+    { "key": "mfaSecret", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "BLOQUE A - Actividad Semana 2 (21/21)",
+      "description": "Pruebas core alineadas con test-secuencial.ps1 y pauta criterio 6.\nCaptura obligatoria: IMG-01 (runner completo verde).",
+      "item": [
+        {
+          "name": "A01 - Public - Hola (200)",
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/public/hola" },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('Status 200', function () { pm.response.to.have.status(200); });"], "type": "text/javascript" } }]
+        },
+        {
+          "name": "A02 - Sin token - Listar productos (401) [IMG-04]",
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/productos" },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('Status 401', function () { pm.response.to.have.status(401); });"], "type": "text/javascript" } }]
+        },
+        {
+          "name": "A03 - Registro nuevo cliente (201)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"nuevo_cliente_evidencia\",\n  \"password\": \"test1234\"\n}" },
+            "url": "{{baseUrl}}/api/auth/register"
+          },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('Status 201 o 409', function () { pm.expect(pm.response.code).to.be.oneOf([201, 409]); });"], "type": "text/javascript" } }]
+        },
+        {
+          "name": "A04 - Login CLIENTE (200) [IMG-07]",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"cliente1\",\n  \"password\": \"cliente123\"\n}" },
+            "url": "{{baseUrl}}/api/auth/login"
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+            "pm.test('Token presente', function () { pm.expect(pm.response.json().token).to.be.a('string'); });",
+            "pm.collectionVariables.set('tokenCliente', pm.response.json().token);"
+          ], "type": "text/javascript" } }]
+        },
+        {
+          "name": "A05 - CLIENTE - Listar productos (200)",
+          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{tokenCliente}}" }], "url": "{{baseUrl}}/api/productos" },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('Status 200', function () { pm.response.to.have.status(200); });"], "type": "text/javascript" } }]
+        },
+        {
+          "name": "A06 - CLIENTE - Crear producto (403) [IMG-05]",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenCliente}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Prohibido\",\n  \"precio\": 100,\n  \"stock\": 1,\n  \"categoria\": { \"id\": 1 }\n}" },
+            "url": "{{baseUrl}}/api/productos"
+          },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('Status 403', function () { pm.response.to.have.status(403); });"], "type": "text/javascript" } }]
+        },
+        {
+          "name": "A07 - CLIENTE - Inventario (403) [IMG-06]",
+          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{tokenCliente}}" }], "url": "{{baseUrl}}/api/inventario" },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('Status 403', function () { pm.response.to.have.status(403); });"], "type": "text/javascript" } }]
+        },
+        {
+          "name": "A08 - Login EMPLEADO (200)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"empleado1\",\n  \"password\": \"empleado123\"\n}" },
+            "url": "{{baseUrl}}/api/auth/login"
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+            "pm.collectionVariables.set('tokenEmpleado', pm.response.json().token);"
+          ], "type": "text/javascript" } }]
+        },
+        {
+          "name": "A09 - EMPLEADO - Crear categoria (200)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenEmpleado}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"CatEvidencia\"\n}" },
+            "url": "{{baseUrl}}/api/categorias"
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+            "pm.collectionVariables.set('categoriaId', pm.response.json().id);"
+          ], "type": "text/javascript" } }]
+        },
+        {
+          "name": "A10 - EMPLEADO - Crear producto (200)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenEmpleado}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Agua Evidencia\",\n  \"precio\": 500,\n  \"stock\": 50,\n  \"categoria\": { \"id\": {{categoriaId}} }\n}" },
+            "url": "{{baseUrl}}/api/productos"
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+            "pm.collectionVariables.set('productoId', pm.response.json().id);"
+          ], "type": "text/javascript" } }]
+        },
+        {
+          "name": "A11 - EMPLEADO - Registrar inventario (200)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenEmpleado}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"producto\": { \"id\": {{productoId}} },\n  \"cantidad\": 10,\n  \"tipoMovimiento\": \"Entrada\",\n  \"fechaMovimiento\": \"2026-06-01T12:00:00.000Z\"\n}" },
+            "url": "{{baseUrl}}/api/inventario"
+          },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('Status 200', function () { pm.response.to.have.status(200); });"], "type": "text/javascript" } }]
+        },
+        {
+          "name": "A12 - EMPLEADO - Listar inventario (200)",
+          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{tokenEmpleado}}" }], "url": "{{baseUrl}}/api/inventario" },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('Status 200', function () { pm.response.to.have.status(200); });"], "type": "text/javascript" } }]
+        },
+        {
+          "name": "A13 - EMPLEADO - Eliminar producto (403)",
+          "request": { "method": "DELETE", "header": [{ "key": "Authorization", "value": "Bearer {{tokenEmpleado}}" }], "url": "{{baseUrl}}/api/productos/{{productoId}}" },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('Status 403', function () { pm.response.to.have.status(403); });"], "type": "text/javascript" } }]
+        },
+        {
+          "name": "A14 - Login GERENTE (200)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"gerente1\",\n  \"password\": \"gerente123\"\n}" },
+            "url": "{{baseUrl}}/api/auth/login"
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+            "pm.collectionVariables.set('tokenGerente', pm.response.json().token);"
+          ], "type": "text/javascript" } }]
+        },
+        {
+          "name": "A15 - GERENTE - Listar usuarios (200) [IMG-08]",
+          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{tokenGerente}}" }], "url": "{{baseUrl}}/api/usuarios" },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+            "pm.test('Sin password en JSON', function () { pm.expect(pm.response.text()).to.not.include('\"password\"'); });",
+            "var users = pm.response.json();",
+            "var cliente = users.find(function(u) { return u.username === 'cliente1'; });",
+            "if (cliente) { pm.collectionVariables.set('clienteId', cliente.id); }"
+          ], "type": "text/javascript" } }]
+        },
+        {
+          "name": "A16 - CLIENTE - Listar usuarios (403) [IMG-09]",
+          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{tokenCliente}}" }], "url": "{{baseUrl}}/api/usuarios" },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('Status 403', function () { pm.response.to.have.status(403); });"], "type": "text/javascript" } }]
+        },
+        {
+          "name": "A17 - CLIENTE - Agregar al carrito (200)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenCliente}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"usuario\": { \"id\": {{clienteId}} },\n  \"producto\": { \"id\": {{productoId}} },\n  \"cantidad\": 2\n}" },
+            "url": "{{baseUrl}}/api/carrito"
+          },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('Status 200', function () { pm.response.to.have.status(200); });"], "type": "text/javascript" } }]
+        },
+        {
+          "name": "A18 - CLIENTE - Crear venta (200)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenCliente}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"usuario\": { \"id\": {{clienteId}} },\n  \"fecha\": \"2026-06-01T14:00:00.000Z\"\n}" },
+            "url": "{{baseUrl}}/api/ventas"
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+            "pm.collectionVariables.set('ventaId', pm.response.json().id);"
+          ], "type": "text/javascript" } }]
+        },
+        {
+          "name": "A19 - CLIENTE - Detalle venta (200)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenCliente}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"venta\": { \"id\": {{ventaId}} },\n  \"producto\": { \"id\": {{productoId}} },\n  \"cantidad\": 1,\n  \"precio\": 500\n}" },
+            "url": "{{baseUrl}}/api/detalle-ventas"
+          },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('Status 200', function () { pm.response.to.have.status(200); });"], "type": "text/javascript" } }]
+        },
+        {
+          "name": "A20a - EMPLEADO - Crear producto para eliminar (200)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenEmpleado}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"TempDeleteEvidencia\",\n  \"precio\": 99,\n  \"stock\": 1,\n  \"categoria\": { \"id\": {{categoriaId}} }\n}" },
+            "url": "{{baseUrl}}/api/productos"
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+            "pm.collectionVariables.set('productoDeleteId', pm.response.json().id);"
+          ], "type": "text/javascript" } }]
+        },
+        {
+          "name": "A20b - GERENTE - Eliminar producto (204) [IMG-10]",
+          "request": { "method": "DELETE", "header": [{ "key": "Authorization", "value": "Bearer {{tokenGerente}}" }], "url": "{{baseUrl}}/api/productos/{{productoDeleteId}}" },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('Status 204', function () { pm.response.to.have.status(204); });"], "type": "text/javascript" } }]
+        },
+        {
+          "name": "A21 - Login credenciales invalidas (401) [IMG-11]",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"cliente1\",\n  \"password\": \"wrongpassword\"\n}" },
+            "url": "{{baseUrl}}/api/auth/login"
+          },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('Status 401', function () { pm.response.to.have.status(401); });"], "type": "text/javascript" } }]
+        }
+      ]
+    },
+    {
+      "name": "BLOQUE B - Roadmap profesional GAP 005-012",
+      "description": "Evidencia de mejoras del feedback docente (§12.2 entregable.md).\nCaptura obligatoria: IMG-12 (runner) + IMG-13 a IMG-17.\nEjecutar DESPUES del BLOQUE A (requiere tokenGerente).",
+      "item": [
+        {
+          "name": "B01 - GERENTE Listar usuarios DTO sin password [IMG-13]",
+          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{tokenGerente}}" }], "url": "{{baseUrl}}/api/usuarios" },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+            "pm.test('GAP-006: JSON sin campo password', function () { pm.expect(pm.response.text()).to.not.include('\"password\"'); });",
+            "pm.test('GAP-006: incluye username y roles', function () {",
+            "    var u = pm.response.json()[0];",
+            "    pm.expect(u).to.have.property('username');",
+            "    pm.expect(u).to.have.property('roles');",
+            "});"
+          ], "type": "text/javascript" } }]
+        },
+        {
+          "name": "B02 - GERENTE Audit logs [IMG-14]",
+          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{tokenGerente}}" }], "url": "{{baseUrl}}/api/audit-logs" },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+            "pm.test('GAP-007: audit logs presentes', function () { pm.expect(pm.response.json().length).to.be.at.least(1); });"
+          ], "type": "text/javascript" } }]
+        },
+        {
+          "name": "B03 - GERENTE Retention run [IMG-15]",
+          "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{tokenGerente}}" }], "url": "{{baseUrl}}/api/admin/retention/run" },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+            "pm.test('GAP-012: respuesta con anonymizedCount', function () { pm.expect(pm.response.json()).to.have.property('anonymizedCount'); });"
+          ], "type": "text/javascript" } }]
+        },
+        {
+          "name": "B04 - Headers OWASP public/hola [IMG-16]",
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/public/hola" },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+            "pm.test('GAP-011: Content-Security-Policy', function () { pm.response.to.have.header('Content-Security-Policy'); });",
+            "pm.test('GAP-011: Referrer-Policy', function () { pm.response.to.have.header('Referrer-Policy'); });",
+            "pm.test('GAP-011: X-Content-Type-Options', function () { pm.response.to.have.header('X-Content-Type-Options'); });"
+          ], "type": "text/javascript" } }]
+        },
+        {
+          "name": "B05 - GERENTE MFA setup [IMG-17]",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{tokenGerente}}" }],
+            "url": "{{baseUrl}}/api/auth/mfa/setup"
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+            "pm.test('GAP-010: secret y qrUri presentes', function () {",
+            "    var json = pm.response.json();",
+            "    pm.expect(json.secret).to.be.a('string');",
+            "    pm.expect(json.qrUri).to.be.a('string');",
+            "    pm.collectionVariables.set('mfaSecret', json.secret);",
+            "});"
+          ], "type": "text/javascript" } }]
+        },
+        {
+          "name": "B06 - Login gerente1 sin MFA activo [IMG-18]",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"gerente1\",\n  \"password\": \"gerente123\"\n}" },
+            "url": "{{baseUrl}}/api/auth/login"
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+            "pm.test('Token directo (mfaRequired false en demo)', function () {",
+            "    var json = pm.response.json();",
+            "    pm.expect(json.token).to.be.a('string');",
+            "    pm.expect(json.mfaRequired || false).to.eql(false);",
+            "});"
+          ], "type": "text/javascript" } }]
+        }
+      ]
+    },
+    {
+      "name": "BLOQUE C - Seguridad avanzada (EJECUTAR AL FINAL)",
+      "description": "ADVERTENCIA: C01 bloquea el username cliente_brute_test por 15 minutos.\nEjecutar solo cuando hayas terminado todas las demas capturas.\nCaptura: IMG-19 (6to intento = 429).",
+      "item": [
+        {
+          "name": "C01a - Brute force intento 1 (401)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"cliente_brute_test\",\n  \"password\": \"wrong1\"\n}" },
+            "url": "{{baseUrl}}/api/auth/login"
+          },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('Status 401', function () { pm.response.to.have.status(401); });"], "type": "text/javascript" } }]
+        },
+        {
+          "name": "C01b - Brute force intento 2 (401)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"cliente_brute_test\",\n  \"password\": \"wrong2\"\n}" },
+            "url": "{{baseUrl}}/api/auth/login"
+          },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('Status 401', function () { pm.response.to.have.status(401); });"], "type": "text/javascript" } }]
+        },
+        {
+          "name": "C01c - Brute force intento 3 (401)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"cliente_brute_test\",\n  \"password\": \"wrong3\"\n}" },
+            "url": "{{baseUrl}}/api/auth/login"
+          },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('Status 401', function () { pm.response.to.have.status(401); });"], "type": "text/javascript" } }]
+        },
+        {
+          "name": "C01d - Brute force intento 4 (401)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"cliente_brute_test\",\n  \"password\": \"wrong4\"\n}" },
+            "url": "{{baseUrl}}/api/auth/login"
+          },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('Status 401', function () { pm.response.to.have.status(401); });"], "type": "text/javascript" } }]
+        },
+        {
+          "name": "C01e - Brute force intento 5 (401)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"cliente_brute_test\",\n  \"password\": \"wrong5\"\n}" },
+            "url": "{{baseUrl}}/api/auth/login"
+          },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('Status 401', function () { pm.response.to.have.status(401); });"], "type": "text/javascript" } }]
+        },
+        {
+          "name": "C01f - Brute force intento 6 BLOQUEADO (429) [IMG-19]",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"cliente_brute_test\",\n  \"password\": \"wrong6\"\n}" },
+            "url": "{{baseUrl}}/api/auth/login"
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('GAP-008: Status 429 cuenta bloqueada', function () { pm.response.to.have.status(429); });"
+          ], "type": "text/javascript" } }]
+        }
+      ]
+    }
+  ]
+}
