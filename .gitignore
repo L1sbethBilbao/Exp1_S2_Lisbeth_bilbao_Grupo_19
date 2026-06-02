@@ -31,3 +31,8 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Entrega Semana 2 (local / aula virtual, no versionar) ###
+CHECKLIST_ENTREGA_SEMANA_2.md
+INFORME_SEMANA_2.md
+postman/MiniMarket_Semana2.postman_collection.json
